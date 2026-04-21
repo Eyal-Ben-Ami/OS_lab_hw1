@@ -466,6 +466,11 @@ struct task_struct {
 
 /* journalling filesystem info */
 	void *journal_info;
+
+/* new fields for the MPI linked lists */
+	struct list_head mpi_group_list;
+	struct list_head mpi_message_list;
+	spinlock_t mpi_lock;
 };
 
 /*
