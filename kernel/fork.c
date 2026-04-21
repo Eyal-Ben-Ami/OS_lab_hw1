@@ -592,6 +592,11 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 	struct task_struct *p;
 	struct completion vfork;
 
+	//variables to use for the loop
+	struct list_head* pos;
+	struct mpi_group* parent_group;
+	struct mpi_group* child_group;
+
 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
 		return -EINVAL;
 
@@ -652,6 +657,30 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 		goto bad_fork_cleanup;
 
 	INIT_LIST_HEAD(&p->run_list);
+
+	/* initialize MPI message_list, group_list and lock. copy parent's groups */
+	//initialize all
+	INIT_LIST_HEAD(&p->mpi_groups_list);
+	INIT_LIST_HEAD(&p->mpi_messages_list);
+	spin_lock_init(&p->mpi_lock);
+
+	//iterate through the parent groups and copy to the childs group
+	list_for_each(pos, &current->mpi_groups_list) {
+		//get the current node
+		parent_group = list_entry(pos, struct mpi_group, list);
+		//allocate memory for the new node
+		child_group = kmalloc(sizeof(struct mpi_group), GFP_KERNEL);
+		if (!child_group) {
+			printk("debug: eyal: kmalloc failed in fork");
+			break;
+		}
+		//copy the group id from the parent to the child
+		child_group->gid = parent_group->gid;
+		//add the node to the list
+		list_add_tail(child_group->list, &p->mpi_groups_list);
+	}
+	/* end of changes for MPI */
+
 
 	p->p_cptr = NULL;
 	init_waitqueue_head(&p->wait_chldexit);

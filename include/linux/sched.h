@@ -320,16 +320,16 @@ typedef struct prio_array prio_array_t;
 
 /* new structs for handling MPI */
 //struct for all the groups of a process
-struct mpi_group_node {
+struct mpi_group {
 	int gid;
-	list_t ptr;
+	list_t list;
 };
 //struct for all the messages of a process
-struct mpi_message_node {
+struct mpi_message {
 	pid_t sender_pid;
 	char *data;
 	ssize_t size;
-	list_t ptr;
+	list_t list;
 };
 /* end of new structs for MPI */
 
@@ -468,8 +468,8 @@ struct task_struct {
 	void *journal_info;
 
 /* new fields for the MPI linked lists */
-	struct list_head mpi_group_list;
-	struct list_head mpi_message_list;
+	struct list_head mpi_groups_list;
+	struct list_head mpi_messages_list;
 	spinlock_t mpi_lock;
 };
 
@@ -576,8 +576,8 @@ extern struct exec_domain	default_exec_domain;
     blocked:		{{0}},						\
     alloc_lock:		SPIN_LOCK_UNLOCKED,				\
     journal_info:	NULL,						\
-	mpi_group_list: LIST_HEAD_INIT(tsk.mpi_group_list), \
-	mpi_message_list: LIST_HEAD_INIT(tsk.mpi_message_list), \
+	mpi_groups_list: LIST_HEAD_INIT(tsk.mpi_groups_list), \
+	mpi_messages_list: LIST_HEAD_INIT(tsk.mpi_messages_list), \
 	mpi_lock: SPIN_LOCK_UNLOCKED, \
 }
 
