@@ -318,6 +318,21 @@ extern struct user_struct root_user;
 
 typedef struct prio_array prio_array_t;
 
+/* new structs for handling MPI */
+//struct for all the groups of a process
+struct mpi_group_node {
+	int gid;
+	list_t ptr;
+};
+//struct for all the messages of a process
+struct mpi_message_node {
+	pid_t sender_pid;
+	char *data;
+	ssize_t size;
+	list_t ptr;
+};
+/* end of new structs for MPI */
+
 struct task_struct {
 	/*
 	 * offsets of these are hardcoded elsewhere - touch with care
