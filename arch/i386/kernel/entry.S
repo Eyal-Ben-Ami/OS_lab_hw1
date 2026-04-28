@@ -650,6 +650,11 @@ ENTRY(sys_call_table)
 	.long SYMBOL_NAME(sys_sched_setaffinity)
 	.long SYMBOL_NAME(sys_sched_getaffinity)
 
+	.long SYMBOL_NAME(sys_mpi_register) /* new mpi syscalls */
+	.long SYMBOL_NAME(sys_mpi_send)
+	.long SYMBOL_NAME(sys_mpi_receive)
+	.long SYMBOL_NAME(sys_mpi_unregister)
+
 	.rept NR_syscalls-(.-sys_call_table)/4
 		.long SYMBOL_NAME(sys_ni_syscall)
 	.endr
