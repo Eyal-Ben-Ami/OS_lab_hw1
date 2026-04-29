@@ -677,7 +677,7 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 		//copy the group id from the parent to the child
 		child_group->gid = parent_group->gid;
 		//add the node to the list
-		list_add_tail(child_group->list, &p->mpi_groups_list);
+		list_add_tail(&child_group->list, &p->mpi_groups_list);
 	}
 	/* end of changes for MPI */
 
