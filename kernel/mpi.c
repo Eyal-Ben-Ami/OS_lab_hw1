@@ -124,3 +124,57 @@ asmlinkage int sys_mpi_send(pid_t pid, char* message, ssize_t message_size) {
     spin_unlock(&receiver_task->mpi_lock);
     return 0;
 }
+
+asmlinkage int sys_mpi_receive(pid_t pid, char* message, ssize_t message_size) {
+
+    struct list_head *pos;
+    struct mpi_message *current_message;
+    int found = 0;
+    int num_of_bytes_read;
+
+    if (!message || message_size < 1) {
+        printk("debug: eyal: process %d tried to read a message from process %d but got bad parameters\n", current->pid, pid);
+        return -EINVAL;
+    }
+
+    if (list_empty(&current->mpi_groups_list)) {
+        printk("debug: eyal: process %d tried to read a message from process %d but it is not registered for MPI communication\n", current->pid, pid);
+        return -EPERM;
+    }
+
+    //search a message from pid
+    spin_lock(&current->mpi_lock);
+    list_for_each(pos, &current->mpi_messages_list) {
+        current_message = list_entry(pos, struct mpi_message, list);
+        if (current_message->sender_pid == pid) {
+            found = 1;
+            list_del(&current_message->list); //remove this node from the list
+            break;
+        }
+    }
+    spin_unlock(&current->mpi_lock);
+
+    if (!found) {
+        printk("debug: eyal: process %d tried to read a message from process %d but no message from this process is currently in queue\n", current->pid, pid);
+        return -EAGAIN;
+    }
+
+    //copy and delete the message
+    if (current_message->size < message_size) {//make sure we don't try to read too much
+        message_size = current_message->size;
+    }
+    num_of_bytes_read = message_size - copy_to_user(message, current_message->data, message_size);
+
+    //release memory
+    kfree(current_message->data);
+    kfree(current_message);
+
+    //check return value
+    if (num_of_bytes_read == 0) {
+        printk("debug: eyal: process %d tried to read a message from process %d but failed to write into user buffer\n", current->pid, pid);
+        return -EFAULT;
+    }
+
+    return num_of_bytes_read;
+
+}
