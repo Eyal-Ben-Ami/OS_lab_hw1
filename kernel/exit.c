@@ -23,6 +23,7 @@
 
 extern void sem_exit (void);
 extern struct task_struct *child_reaper;
+extern asmlinkage int sys_mpi_unregister(int mpi_gid);
 
 int getrusage(struct task_struct *, int, struct rusage *);
 
@@ -518,6 +519,9 @@ fake_volatile:
 	exit_namespace(tsk);
 	exit_sighand(tsk);
 	exit_thread();
+
+	/* ERASE ALL MPI GROUPS AND MESSAGES */
+	sys_mpi_unregister(-1);
 
 	if (current->leader)
 		disassociate_ctty(1);
