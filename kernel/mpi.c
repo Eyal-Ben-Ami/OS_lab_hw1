@@ -115,6 +115,7 @@ asmlinkage int sys_mpi_send(pid_t pid, char* message, ssize_t message_size) {
 
     //put the message data in the node
     new_message->sender_pid = current->pid;
+    new_message->gid = shared_group;
     new_message->data = kernel_buffer;
     new_message->size = message_size;
 

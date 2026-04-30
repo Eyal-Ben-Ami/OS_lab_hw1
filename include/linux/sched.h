@@ -327,6 +327,7 @@ struct mpi_group {
 //struct for all the messages of a process
 struct mpi_message {
 	pid_t sender_pid;
+	int gid;
 	char *data;
 	ssize_t size;
 	list_t list;
