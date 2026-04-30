@@ -179,3 +179,68 @@ asmlinkage int sys_mpi_receive(pid_t pid, char* message, ssize_t message_size) {
     return num_of_bytes_read;
 
 }
+
+asmlinkage int sys_mpi_unregister(int mpi_gid) {
+
+    struct list_head *pos, *next;
+    struct mpi_group *current_group;
+    struct mpi_message *current_message;
+    int found = 0;
+
+    if (mpi_gid < -1) {
+        printk("debug: eyal: process %d tried to unregister from MPI group %d but it is not a valid gid\n", current->pid, mpi_gid);
+        return -1;
+    }
+
+    if (mpi_gid == -1) {//delete all
+        //delete all groups
+        spin_lock(&current->mpi_lock);
+        list_for_each_safe(pos, next, &current->mpi_groups_list) {
+            current_group = list_entry(pos, struct mpi_group, list);
+            list_del(&current_group->list);
+            kfree(current_group);
+        }
+        //delete all messages
+        list_for_each_safe(pos, next, &current->mpi_messages_list) {
+            current_message = list_entry(pos, struct mpi_message, list);
+            list_del(&current_message->list);
+            kfree(current_message->data);
+            kfree(current_message);
+        }
+        spin_unlock(&current->mpi_lock);
+
+        return 0;
+    }
+
+    //search for the specific group
+    spin_lock(&current->mpi_lock);
+    list_for_each(pos, &current->mpi_groups_list) {
+        current_group = list_entry(pos, struct mpi_group, list);
+        if (current_group->gid == mpi_gid) {
+            found = 1;
+            list_del(&current_group->list);
+            kfree(current_group);
+            break;
+        }
+    }
+    spin_unlock(&current->mpi_lock);
+
+    if (!found) {
+        printk("debug: eyal: process %d tried to unregister from MPI group %d but is not registered to it\n", current->pid, mpi_gid);
+        return 0;
+    }
+
+    //delete all the messages from this group
+    spin_lock(&current->mpi_lock);
+    list_for_each_safe(pos, next, &current->mpi_messages_list) {
+        current_message = list_entry(pos, struct mpi_message, list);
+        if (current_message->gid == mpi_gid) {
+            list_del(&current_message->list);
+            kfree(current_message->data);
+            kfree(current_message);
+        }
+    }
+    spin_unlock(&current->mpi_lock);
+
+    return 0;
+}
