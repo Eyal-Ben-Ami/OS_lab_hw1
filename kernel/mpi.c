@@ -66,7 +66,9 @@ asmlinkage int sys_mpi_send(pid_t pid, char* message, ssize_t message_size) {
 
     //verify the processes share an MPI group
     spin_lock(&current->mpi_lock);
-    spin_lock(&receiver_task->mpi_lock);
+    if (current != receiver_task) {
+        spin_lock(&receiver_task->mpi_lock);
+    }
 
     list_for_each(pos1, &current->mpi_groups_list) {
         sender_group = list_entry(pos1, struct mpi_group, list);
@@ -82,7 +84,9 @@ asmlinkage int sys_mpi_send(pid_t pid, char* message, ssize_t message_size) {
         }
     }
 
-    spin_unlock(&receiver_task->mpi_lock);
+    if (current != receiver_task) {
+        spin_unlock(&receiver_task->mpi_lock);
+    }
     spin_unlock(&current->mpi_lock);
 
     if (shared_group == -1) {
